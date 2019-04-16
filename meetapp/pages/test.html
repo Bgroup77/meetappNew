@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MEETAPP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <!--<link href="../styleSheet.css" rel="stylesheet" />
+    <script src="../Scripts/design.js"></script>-->
+
+    <style type="text/css">
+
+        img {
+            height: 100px;
+        }
+    </style>
+    
+    <script>
+        $(document).ready(function () {
+            //bring all user's data according to his email
+            email = JSON.parse(localStorage["userMail"]);
+            ajaxCall("GET", "../api/participant/meetings?email=" + email, "", getSuccessMeetings, errorMeetings);
+            return false;
+            //userID = JSON.parse(localStorage["userMail"]);
+            //ajaxCall("GET", "../api/participant/details?mail=" + mail, "", getParticipantSuccess, errorGetParticipant);          
+        });
+
+        // this function is activated in case of a success
+        function getSuccessMeetings(meetingsdata) {
+            strMeetings = "";
+            for (var i = 0; i < meetingsdata.length; i++) {
+                strMeetings += "<option value =' " + (i + 1) + "'>" + meetingsdata[i].Subject + "</option >";
+            }
+
+            $("#meetings").html(strMeetings);
+        }
+
+        // this function is activated in case of a failure
+        function errorMeetings(err) {
+            alert("could not get meetings per participant from DB");
+        }
+
+
+    </script>
+</head>
+<body>
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#"> MEETAPP</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"> <a href="insertMeeting.html"> Add a Meeting</a> </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <form id="pForm">
+            <div class="form-group">
+                <label for="meetings"> פגישות של משתתף</label>
+                <select id="meetings" multiple required> </select>
+            </div>
+            <div id="ph"> </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,248 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MEETAPP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <!--<link href="../styleSheet.css" rel="stylesheet" />
+    <script src="../Scripts/design.js"></script>-->
+    <style type="text/css">
+        img {
+            height: 100px;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            imgParticipant = "";
+            //get all prferences from DB
+            ajaxCall("GET", "../api/preferences", "", successGetPreferencesInsert, errorGetPreferencesInsert);
+
+            $("#pForm").submit(f1);
+            $('#buttonUpload').on('click', function () {
+                var data = new FormData();
+                var files = $("#files").get(0).files;
+
+                // Add the uploaded file to the form data collection
+                if (files.length > 0) {
+                    for (f = 0; f < files.length; f++) {
+                        data.append("UploadedImage", files[f]);
+                    }
+                    data.append("name", "meetapp"); // aopend what ever data you want to send along with the files. See how you extract it in the controller.
+                }
+
+                // Ajax upload
+                $.ajax({
+                    type: "POST",
+                    url: "../Api/FileUpload",
+                    contentType: false,
+                    processData: false,
+                    data: data,
+                    success: showImages,
+                    error: error
+                });
+
+                return false;
+            });
+        });
+
+        var isVegan = 0;
+        function VeganClick(val) {
+            isVegan = val;
+        }
+        var isVegetarian = 0;
+        function VegetarianClick(val) {
+            isVegetarian = val;
+        }
+        var isAccessibility = 0;
+        function AccessibilityClick(val) {
+            isAccessibility = val;
+        }
+
+        var hasCar = 0;
+        function CarClick(val) {
+            hasCar = val;
+        }
+
+        var wantsKosher = 0;
+        function KosherClick(val) {
+            wantsKosher = val;
+        }
+
+        function AddParticipant() {
+            if (imgParticipant == "") {
+
+                if ($("#gender").val() == "נקבה") imgParticipant = "UploadedImages/female.jpg";
+                else imgParticipant = "UploadedImages/male.jpg"
+            }
+            Participant = {
+                // Note that the name of the fields must be identical to the names of the properties of the object in the server
+                Email: $("#email").val(),
+                FirstName: $("#firstName").val(),
+                LastName: $("#lastName").val(),
+                Password: $("#password").val(),
+                Phone: $("#phone").val(),
+                Address: $("#address").val(),
+                //BirthDate: $("#birthDate").val(),
+                Gender: $("#gender").val(),
+                Image: imgParticipant,
+                Preferences: $("#preferences").val()
+            }
+
+            ajaxCall("POST", "../api/participant", JSON.stringify(Participant), success, error);
+            return false;
+        }
+
+        function success(data) {
+            if (data != 0)
+                swal("The participant was added successfully :)");
+            else
+                swal("error");
+        }
+
+        function error(err) {
+            alert("error");
+        }
+
+        function f1() {
+            email = $("#email").val();
+            ajaxCall("GET", "../api/participant/validMail?email=" + email, "", successValidEmail, errorValidEmail);
+            return false;
+
+
+            // the return false will prevent the form from being submitted // hence the page will not reload
+        }
+        function successValidEmail(data) {
+            if (data)
+                alert("Email in use. Please insert another one");
+            else
+                AddParticipant();
+        }
+
+        function errorValidEmail(err) {
+            alert(err);
+        }
+
+        // this function is activated in case of a success
+        function successGetPreferencesInsert(Preferencesdata) {
+            strPreferences = "";
+            for (var i = 0; i <Preferencesdata.length; i++) {
+                strPreferences += "<option value =' " + (i +1) + "'>" + Preferencesdata[i].Name + "</option >";
+            }
+
+            $("#preferences").html(strPreferences);
+        }
+
+        // this function is activated in case of a failure
+        function errorGetPreferencesInsert(err) {
+            alert("could not get Preferences from DB");
+        }
+
+        function showImages(data) {
+            console.log(data);
+            imgParticipant = data;
+            var imgStr = "";
+            if (Array.isArray(data)) {
+                for (var i = 0; i < data.length; i++) {
+                    imgStr += "<img src='../" + data[i] + "'/>";
+                }
+
+            }
+
+            else {
+                imgStr = "<img src='../" + data + "'/>";
+            }
+
+            document.getElementById("ph").innerHTML = imgStr;
+        }
+
+        function error(data) {
+            console.log(data);
+        }
+
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#"> MEETAPP</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"> <a href="insert.html"> Add a Participant</a> </li>
+                <li> <a href="showNew.html"> Show</a> </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <form id="pForm">
+            <h2> הזן פרטים</h2>
+            <div class="form-group">
+                <label for="firstName"> שם פרטי</label>
+                <input type="text" class="form-control" id="firstName" placeholder="" required pattern="[א-תA-Za-z]+" oninvalid="this.setCustomValidity('Invalid input- only alphabetic characters are allowed')">
+            </div>
+            <div class="form-group">
+                <label for="lastName"> שם משפחה</label>
+                <input type="text" class="form-control" id="lastName" placeholder="" required pattern="[א-תA-Za-z]+" oninvalid="this.setCustomValidity('Invalid input- only alphabetic characters are allowed)">
+            </div>
+            <div class="form-group">
+                <label for="email"> אימייל</label>
+                <input type="email" class="form-control" id="email" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="password"> סיסמא</label>
+                <input type="password" class="form-control" id="password" placeholder="הזן סיסמא בת 6 ספרות">
+            </div>
+            <div class="form-group">
+                <label for="Tel"> טלפון</label>
+                <input type="Tel" class="form-control" id="phone" placeholder="" required pattern="0[0-9]{9}" oninvalid="this.setCustomValidity('Telephone number format should be: 0-xxxxxxxxx')" oninput="this.setCustomValidity('')">
+            </div>
+            <div class="form-group">
+                <label for="address"> כתובת</label>
+                <input type="text" class="form-control" id="address" placeholder="Enter your Address" required>
+            </div>
+            <!--<div class="form-group">
+        <label for="birthDate"> תאריך לידה</label>
+        <input type="date" class="form-control" id="birthDate" placeholder="">
+    </div>-->
+            <!--<div class="form-group">
+                <label for="birthDate">תאריך לידה</label>
+                <input type="date" class="form-control" id="birthDate" placeholder="Enter your birthDate" required>
+            </div>-->
+            <div class="form-group">
+                <label for="gender"> מגדר</label>
+                <select id="gender" required>
+                    <option value=""> בחר מגדר</option>
+                    <option value="Male"> זכר</option>
+                    <option value="Female"> נקבה</option>
+                </select>
+            </div>               
+            <div class="form-group">
+                <label for="preferences"> העדפות</label>
+                <select id="preferences" multiple required> </select>
+                    <!--<select id="preferences" multiple required>
+                        <option value=0>כשר </option>
+                        <option value=1> נגישות </option>
+                        <option value=2> רכב </option>
+                        <option value=3> חנייה בתשלום </option>
+                        <option value=4> צמחוני </option>
+                        <option value=5> טבעוני </option>
+                    </select>-->
+
+            </div>
+            <div class="form-group">
+                <label for="files"> תמונה</label>
+                <input type="file" id="files" name="files" />
+            </div>
+            <br />
+            <button type="button" id="buttonUpload"> העלה תמונה</button>
+            <div id="ph"> </div>
+            <input type="submit" value="שלח" />
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,244 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MEETAPP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <!--<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>-->
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <link href="../PreferenceParticipantMeeting.css" rel="stylesheet" />
+    <!--<link href="../styleSheet.css" rel="stylesheet" />
+    <script src="../Scripts/design.js"></script>-->
+    <style type="text/css">
+
+        img {
+            height: 100px;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            preferences = [];
+            //get all prferences from DB
+            ajaxCall("GET", "../api/preferences", "", successGetPreferences, errorGetPreferences);
+
+            //bring all user's data according to his email
+            mail = JSON.parse(localStorage["userMail"]);
+            ajaxCall("GET", "../api/participant/details?mail=" + mail, "", getParticipantSuccess, errorGetParticipant);
+
+            $("button").click(function () {
+                AddPreferences();
+            });
+
+            //$("#pForm").submit(f1);
+        });
+
+
+
+        // this function is activated in case of a success
+        function successGetPreferences(preferencesData) {
+            preferences = preferencesData;
+            strPreferences = "";
+            for (var i = 13; i < 17; i++) {
+                strPreferences += "<option value =' " + (i + 1) + "'>" + preferencesData[i].Name + "</option >";
+            }
+
+            $("#preferences").html(strPreferences);
+        }
+
+        //when getting successfully participant's data
+        function getParticipantSuccess(participant) {
+            participanId = participant.Id;
+            var currentPreferences = "";
+            for (var i = 0; i < participant.Preferences.length; i++) {
+                //  var index = ;
+                currentPreferences += preferences[participant.Preferences[i] - 1].Name + ", ";
+            }
+            currentPreferences = currentPreferences.slice(0, - 2);
+
+            document.getElementById("currentPreferences").innerHTML = currentPreferences;
+
+
+            //showImages(participant.Image);
+        }
+
+        function successGetPreferences(preferencesData) {
+            preferences = preferencesData;
+            strPreferences = "";
+            for (var i = 0; i < preferencesData.length; i++) {
+                strPreferences += "<option value =' " + (i + 1) + "'>" + preferencesData[i].Name + "</option >";
+            }
+
+            $("#preferences").html(strPreferences);
+        }
+
+        // this function is activated in case of a failure
+        function errorGetPreferences(err) {
+            alert("could not get Preferences from DB");
+        }
+        //function InsertPreferencesPerPArticipantPerMeeting() {
+        //    if ($("#preferences").val() == "")
+        //        _preferences = participant_data.Preferences;
+        //    else _preferences = $("#preferences").val();
+
+        //    ajaxCall("POST", "../api/PreferencesPerPArticipantPerMeeting", JSON.stringify(PreferencesPerPArticipantPerMeeting), successUpdate, errorUpdate);
+        //}
+
+        function successUpdate(data) {
+            swal("The user was updated successfully :)");
+        }
+
+        function errorUpdate(err) {
+            alert("error");
+        }
+
+        //function f1() {
+        //    InsertPreferencesPerPArticipantPerMeeting();
+        //    return false;
+        //    // the return false will prevent the form from being submitted // hence the page will not reload
+        //    //$("button").click(function () {
+
+        //    //});
+        //}
+
+        //when getting participant's data fails
+        function errorGetParticipant() {
+            swal("Something went wrong, could not bring your details :(");
+        }
+
+        // this function is activated in case of a failure
+        function errorGetPreferences(err) {
+            alert("could not get Preferences from DB");
+        }
+
+        function AddPreferences() {
+            var meetingId = JSON.parse(localStorage["meetingId"]);
+            var parking = $('#parking').is(":checked");
+            var car = $('#car').is(":checked");
+            var vegan = $('#vegan').is(":checked");
+            var vegetarian = $('#vegetarian').is(":checked");
+            var accessibility = $('#accessibility').is(":checked");
+            var kosher = $('#kosher').is(":checked");
+            var acceptMeeting = $('#acceptMeeting').is(":checked");
+
+            preferenceId = [];
+            if (parking)
+                preferenceId[0] = 1;
+            if (car)
+                preferenceId[1] = 3;
+            if (vegan)
+                preferenceId[2] = 5;
+            if (vegetarian)
+                preferenceId[3] = 7;
+            if (accessibility)
+                preferenceId[4] = 9;
+            if (kosher)
+                preferenceId[5] = 11;
+            if (acceptMeeting)
+                preferenceId[6] = 23;
+            // if (acceptMeeting == false)
+            // preferenceId[6] = 24;
+            PreferencesParticipantMeeting = {
+                PreferenceId: preferenceId,
+                ParticipantId: participanId,
+                MeetingId: meetingId
+            }
+            ajaxCall("POST", "../api/PreferenceParticipantMeeting", JSON.stringify(PreferencesParticipantMeeting), postSuccess, postError);
+            return false;
+        }
+
+        function postError(err) {
+            swal("The preferences per participant per meeting was have an error :(");
+        }
+
+        function postSuccess() {
+            swal("The preferences per participant per meeting was added successfully :)");
+        }
+
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#"> MEETAPP</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"> <a href="insert.html"> Add a Participant</a> </li>
+                <li> <a href="showNew.html"> Show</a> </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <form id="pForm">
+            <h2> הזן פרטים</h2>
+            <div class="form-group">
+                <h3> ההעדפות שלך הן</h3>
+                <h4 id="currentPreferences"></h4>
+                <br />
+                <h5>אם לא תבחר אחרות, ההעדפות הנוכחיות שלך יישמרו</h5>
+                <label for="preferences"> בחר העדפות לפגישה</label>
+                <br />
+                <div class="float">
+                    <h4>חניה בתשלום</h4>
+                    <label class="switch" id="element1">
+                        <input type="checkbox" name="parking" id="parking">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="float">
+                    <h4>רכב</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="car" name="car">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="float">
+                    <h4>טבעוני</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="vegan" name="vegan">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="float">
+                    <h4>צמחוני</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="vegetarian" name="vegetarian">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="float">
+                    <h4>נגישות</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="accessibility" name="accessibility">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="float">
+                    <h4>כשר</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="kosher" name="kosher">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="float">
+                    <h4>האם אתה מקבל את הפגישה ?</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="acceptMeeting" name="acceptMeeting">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <select id="preferences" multiple required> </select>
+                <div id="ph"> </div>
+                <br>
+                <button type="button">שלח</button>
+                <!--<input type="submit" value="שלח" />-->
+                <!--test gitgub-->
+                </div>
+</form>
+    </div>
+</body>
+</html>

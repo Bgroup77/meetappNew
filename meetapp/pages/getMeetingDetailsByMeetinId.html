@@ -1,0 +1,138 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <title>DataTable Example</title>
+
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+
+    <style type="text/css">
+
+
+        .saveBtn {
+            display: none;
+        }
+
+        .btnStyle {
+            background-color: cornflowerblue;
+            margin-bottom: 5px;
+            margin-top: 5px;
+            width: 70px;
+        }
+
+        .btn-group-lg > .btn, .btn-md {
+            font-size: 17px;
+            line-height: 1.3333333;
+            border-radius: 6px;
+        }
+
+        img {
+            height: 100px;
+        }
+
+        .font {
+            color: white;
+        }
+    </style>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <script src="../Scripts/ajaxCalls.js"></script>
+
+    <script>
+
+        // will run when the document is ready
+        $(document).ready(function () {
+            meetingId = 16;
+            ajaxCall("GET", "../api/meeting/getDetailsById?meetingId=" + meetingId, "", getSuccess, errorMeet);
+
+        });
+
+        // this function is activated in case of a success
+        function getSuccess(meetingdata) {
+            meeting = meetingdata; // keep the person array in a global variable;
+            try {
+                tbl = $('#meeting').DataTable({
+                    data: meeting,
+                    pageLength: 10,
+                    columns: [
+                        { data: "Id" },
+                        { data: "Subject" },
+                        { data: "StartTime" },
+                        { data: "StartHour" },                        
+                        { data: "TimeTillRunningHours" },
+                        { data: "SpecificLocation" },
+                        { data: "Notes" },
+                        //{ data: "StatusID" },
+                        //{ data: "Participants" },
+                        //{
+                        //    render: function (data, type, row, meta) {
+                        //        let dataMeeting = "data-MeetingId='" + row.Id + "'";
+                        //        edit = "<button id='edit" + row.Id + "'  class='btn btn-primary btn-md editBtn btnStyle' " + dataMeeting + "><a class='font' href=preferences.html>Edit</a> </button>";
+
+                        //        return edit;
+                        //    }
+                        //}
+
+                    ],
+                });
+            }
+
+            catch (err) {
+                alert(err);
+            }
+        }
+
+
+        // this function is activated in case of a failure
+        function errorMeet(err) {
+            swal("Error: " + err);
+        }
+
+    </script>
+
+</head>
+<body>
+
+    <!--nav bar from 'Insert'-->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">MeetApp</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <form id="pForm">
+            <table id="meeting" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th class="meetingId">MeetingId</th>
+                        <th>Subject</th>
+                        <th>StartTime</th>
+                        <th>TimeTillRunningHours</th>
+                        <th>SpecificLocation</th>
+                        <th>Notes</th>
+                        <th>StatusID</th>
+                        <th>Participants</th>
+                    </tr>
+                </thead>
+            </table>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,150 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MEETAPP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <script src="../Scripts/design.js"></script>
+
+    <style type="text/css">
+        img {
+            height: 100px;
+        }
+    </style>
+
+    <script>
+            $(document).ready(function () {
+                //bring all businessOwner's data according to his email
+                mail = JSON.parse(localStorage["userMail"]);
+                ajaxCall("GET", "../api/businessOwner/details?mail=" + mail, "", successGetBO, errorGetBO);
+
+            $("#pForm").submit(f1);
+        });
+
+            //when getting successfully person's data
+            function successGetBO(bo) {
+                bo_data = bo;
+                $("#firstName").attr("value", bo.FirstName);
+                $("#lastName").attr("value", bo.LastName);
+                $("#mail").attr("value", bo.Email);
+                $("#password").attr("value", bo.Password);
+                //$("#gender option[value=" + bo.Gender + "]").attr('selected', 'selected');
+
+                //isPremium?
+                //$("input[name=Premium][value=" + bo.IsPremium + "]").prop('checked', true);
+                //$("input[name=isActive][value=" + bo.IsActive + "]").prop('checked', true);
+                //Hobbies
+        }
+
+             //when getting bo's data fails
+            function errorGetBO() {
+                swal("Something went wrong, could not bring your details :(");
+            }
+
+        //var isPremium = 0;
+        //function PremiumClick(val) {
+        //    isPremium = val;
+        //}
+
+        function UpdatePerson() {
+        businessOwner = {
+            // Note that the name of the fields must be identical to the names of the properties of the object in the server
+            FirstName: $("#firstName").val(),
+            LastName: $("#lastName").val(),
+            Email: $("#mail").val(),
+            Password: $("#password").val(),
+            //Gender: $("#gender").val(),
+            //IsPremium: $("input[name='Premium']:checked").val(),
+            //IsActive: $("input[name='isActive']:checked").val(),
+        }
+        // Update person's data in DB
+            ajaxCall("PUT", "../api/businessOwner/update", JSON.stringify(businessOwner), successUpdate, errorUpdate);
+        }
+
+            function successUpdate(data) {
+            swal("The user was updated successfully :)");
+        }
+
+            function errorUpdate(err) {
+            alert("error");
+        }
+
+        function f1() {
+            UpdatePerson();
+            return false;
+            // the return false will prevent the form from being submitted // hence the page will not reload
+        }
+
+        function error(data) {
+            console.log(data);
+        }
+    </script>
+</head>
+<body>
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#"> Tinder</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"> <a href="insert.html"> Add a Person</a> </li>
+                <li> <a href="showNew.html"> Show</a> </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <form id="pForm">
+            <h2> Edit Your Details</h2>
+            <div class="form-group">
+                <label for="firstName"> Name</label>
+                <input type="text" class="form-control" id="firstName" placeholder="Enter your name" required pattern="[א-תA-Za-z]+" oninvalid="this.setCustomValidity('Invalid input- only alphabetic characters are allowed')">
+            </div>
+            <div class="form-group">
+                <label for="lastName"> Family Name</label>
+                <input type="text" class="form-control" id="lastName" placeholder="Enter your family name" required pattern="[א-תA-Za-z]+" oninvalid="this.setCustomValidity('Invalid input- only alphabetic characters are allowed)">
+            </div>
+            <div class="form-group">
+                <label for="mail"> Mail</label>
+                <input type="email" class="form-control" disabled="disabled" id="mail" placeholder="Enter your Mail">
+            </div>
+            <div class="form-group">
+                <label for="password"> Password</label>
+                <input type="password" class="form-control" id="password" placeholder="Enter your Password">
+            </div>
+            <!--<div class="form-group">
+                <label for="gender"> Gender</label>
+                <select id="gender" required>
+                    <option selected disabled hidden id="selectedGender"> Choose Gender</option>
+                    <option value="Male"> Male</option>
+                    <option value="Female"> Female</option>
+                </select>
+            </div>-->
+            <!--<div class="form-group">
+                <label for="Premium"> Premium</label> <br />
+                <div id="premium">
+                    <input type="radio" name="Premium" value="1" onclick="PremiumClick(this.value)"> Premium<br />
+                    <input type="radio" name="Premium" value="0" onclick="PremiumClick(this.value)"> Non Premium<br />
+                </div>
+                <br />
+
+                <label for="Premium"> Active</label> <br />
+                <div id="isActive">
+                    <input type="radio" name="isActive" value="1"> Active<br />
+                    <input type="radio" name="isActive" value="0"> Not Active<br />
+                </div>
+            </div>-->
+
+            <div id="ph"> </div>
+            <br />
+            <input type="submit" value="Submit" />
+        </form>
+    </div>
+</body>
+</html>

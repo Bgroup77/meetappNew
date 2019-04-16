@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MeetApp</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="../Jquery/jquery.multiselect.css" rel="stylesheet" />
+    <link href="../Jquery/style.css" rel="stylesheet" />
+    <link href="../Jquery/prettify.css" rel="stylesheet" />
+    <!--<link href="../styleSheet.css" rel="stylesheet" />
+    <script src="../Scripts/design.js"></script>-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!--<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>-->
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <script>
+        $(document).ready(function () {
+            type = "";
+            email = $("#txt-input").val();
+            password = $("#pwd").val(); 
+            $("#login").on("click", function () {
+                email = $("#txt-input").val();
+                password = $("#pwd").val();
+                ajaxCall("GET", "../api/participants/login?email=" + email + "&password=" + password, "", success, error);
+                return false;
+            });
+        });
+
+        // success callback function after update
+        function success(result) {
+            if (result) {
+                type = "participant";
+                userMail = $("#txt-input").val();
+                jsonString = JSON.stringify(userMail); // turns a complex object into string
+                localStorage["userMail"] = jsonString;         
+            }
+            else
+                ajaxCall("GET", "../api/businessOwner/login?mail=" + email + "&password=" + password, "", SuccessGetBO, error);
+            return false;
+        }
+
+        function SuccessGetBO(result) {
+            if (result) {
+                type = "businessOwner";
+                personMail = $("#txt-input").val();
+                jsonString = JSON.stringify(personMail); // turns a complex object into string
+                localStorage["userMail"] = jsonString;
+                //window.location.replace("Update.html");
+                alert("success");
+            }
+
+            else
+                swal("Wrong password or the user is not registered ");
+        }
+
+        // this function is activated in case of a failure
+        function error(err) {
+            swal(err.message);
+        }
+
+        $(document).on("click", ".log-in", function () {
+            //window.location.replace("show_Meeting_Participant.html");
+        });
+
+
+    </script>
+</head>
+<body>
+    <div class="overlay">
+        <!-- LOGN IN FORM by Omar Dsoky -->
+        <form>
+            <!--   con = Container  for items in the form-->
+            <div class="con">
+                <!--     Start  header Content  -->
+                <header class="head-form">
+                    <h2>Log In</h2>
+                    <!--     A welcome message or an explanation of the login form -->
+                    <p>login here using your username and password</p>
+                </header>
+                <!--     End  header Content  -->
+                <br>
+                <div class="field-set">
+                    <!--   user name -->
+                    <span class="input-item">
+                        <i class="fa fa-user-circle"></i>
+                    </span>
+                    <!--   user name Input-->
+                    <input class="form-input" id="txt-input" type="text" placeholder="@Email" required>
+                    <br>
+                    <!--   Password -->
+                    <span class="input-item">
+                        <i class="fa fa-key"></i>
+                    </span>
+                    <!--   Password Input-->
+                    <input class="form-input" type="password" placeholder="Password" id="pwd" name="password" required>
+                    <!--      Show/hide password  -->
+                    <span>
+                    </span>
+                    <br>
+                    <!--        buttons -->
+                    <!-- button LogIn -->
+                    <!--<button id="login" class="log-in"><a class='font' href=show_Meeting_Participant.html>Log In</a></button>-->   
+                    <button id="login" class="log-in" onclick="window.location.href='show_Meeting_Participant.html'">Log In</button>
+                </div>
+                <!--   other buttons -->
+                <div class="other">
+                    <!--Forgot Password button
+                    <button class="btn submits frgt-pass">Forgot Password</button>-->
+                    <!--     Sign Up button -->
+                    <!--<button id="signUp" class="btn submits sign-up">
+                        <a href="insert.html">Sign Up</a>-->
+                    <!--         Sign Up font icon -->
+                    <!--</button>-->
+                    <!--      End Other the Division -->
+                </div>
+                <!--   End Conrainer  -->
+            </div>
+            <!-- End Form -->
+        </form>
+    </div>
+</body>
+</html>

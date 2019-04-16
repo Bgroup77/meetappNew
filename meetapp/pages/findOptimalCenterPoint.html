@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MEETAPP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <script src="../Scripts/design.js"></script>
+    <style type="text/css">
+
+        #right-panel {
+            font-family: 'Roboto','sans-serif';
+            line-height: 30px;
+            padding-left: 10px;
+        }
+
+            #right-panel select, #right-panel input {
+                font-size: 15px;
+            }
+
+            #right-panel select {
+                width: 100%;
+            }
+
+            #right-panel i {
+                font-size: 12px;
+            }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            height: 100%;
+            width: 50%;
+        }
+
+        #right-panel {
+            float: right;
+            width: 48%;
+            padding-left: 2%;
+        }
+
+        #output {
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div id="right-panel">
+        <div id="inputs">
+            <pre>
+            origin points:
+
+            origin1 = { lat: 32.240830, lng: 35.01410 };
+            origin2 = { lat: 32.779370, lng: 34.979770 };
+            origin3 = { lat: 32.071270, lng: 34.781700 };
+            </pre>
+        </div>
+        <div>
+            <strong>Results</strong>
+        </div>
+        <div id="output"></div>
+    </div>
+    <div id="map"></div>
+    <script>
+        $(document).ready(function () {
+
+            //TBD - 'originsArray' should be dynamic - will be received from DB
+            originsArray = [
+                { lat: 32.240830, lng: 35.01410 }, //tzur natan
+                { lat: 32.779370, lng: 34.979770 }, //enzo sireni 7, haifa
+                { lat: 32.071270, lng: 34.781700 } //even gvirol 1, tlv
+            ];
+            console.log("originsArr: ", originsArray);
+
+            allOptionalCenterPoints = [];
+            minSumDistances = 1000;
+            minVariance = 1000;
+
+            //TBD- function that convert origins array to an objects array (JSON) array, with LatList and LngList fields
+
+            //get an initial center point
+            OriginPoints = {
+                //Xarr and Yarr for calculating averages separately for X and Y
+                LatList: [32.240830, 32.779370, 32.071270],
+                LngList: [35.014100, 34.979770, 34.781700]
+            }
+
+            //sending the JSON of originPoints for calculating first a point
+            ajaxCall("POST", "../api/algorithm/PutOriginPoints", JSON.stringify(OriginPoints), success, error);
+            return false;
+
+        });
+        //success function of calculating first center point by average of origin points:
+        function success(centerPoint) {
+            firstCenterPoint = { lat: centerPoint[0], lng: centerPoint[1] }; //convert the returned array to the "google" form
+            console.log("first center point: ", firstCenterPoint);
+            swal("sucess calculating initial point");
+
+            //insert random points and first center point into "allOptionalCenterPoints" array:
+            allOptionalCenterPoints = generateRandomPoints(centerPoint, 0.5, 3);
+            console.log("allOptionalCenterPoints",allOptionalCenterPoints);//3 random points in 0.5 km radius
+            allOptionalCenterPoints.push(firstCenterPoint);
+            //preform distances calculation for each point in the array as destnation in google request
+            for (var i = 0; i < allOptionalCenterPoints.length; i++) {
+                findDistances(allOptionalCenterPoints[i]);
+            }
+            //console.log(allOptionalCenterPoints[0].lat);
+            //findDistances();
+        }
+
+        function error(err) {
+            alert("error calculating initial point");
+        }
+
+        function findDistances(destination) {
+            var bounds = new google.maps.LatLngBounds;
+            var markersArray = [];
+            var destinationIcon = 'https://chart.googleapis.com/chart?' +
+                'chst=d_map_pin_letter&chld=D|FF0000|000000';
+            var originIcon = 'https://chart.googleapis.com/chart?' +
+                'chst=d_map_pin_letter&chld=O|FFFF00|000000';
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 32.077431, lng: 34.775952 },
+                zoom: 10
+            });
+            var geocoder = new google.maps.Geocoder;
+
+            var service = new google.maps.DistanceMatrixService;
+            service.getDistanceMatrix({
+                origins: originsArray,
+                destinations: [destination],
+                travelMode: 'DRIVING',
+                unitSystem: google.maps.UnitSystem.METRIC, //Metric - returns distances in kilometers and meters.
+                avoidHighways: false,
+                avoidTolls: false
+            }, function (response, status) {
+                if (status !== 'OK') {
+                    alert('Error was: ' + status);
+                } else {
+                    var originList = response.originAddresses;
+                    var destinationList = response.destinationAddresses;
+                    var outputDiv = document.getElementById('output');
+                    outputDiv.innerHTML = '';
+                    deleteMarkers(markersArray);
+
+                    //show on map
+                    var showGeocodedAddressOnMap = function (asDestination) {
+                        var icon = asDestination ? destinationIcon : originIcon;
+                        return function (results, status) {
+                            if (status === 'OK') {
+                                map.fitBounds(bounds.extend(results[0].geometry.location));
+                                markersArray.push(new google.maps.Marker({
+                                    map: map,
+                                    position: results[0].geometry.location,
+                                    icon: icon
+                                }));
+                            } else {
+                                alert('Geocode was not successful due to: ' + status);
+                            }
+                        };
+                    };
+
+                    var distancesArr = [];
+                    var currentVariance;
+                    var sumDistances = 0
+
+                    //find the distance from the current center point to each origin point and display it on a div
+                    for (var i = 0; i < originList.length; i++) {
+                        var results = response.rows[i].elements;
+                        geocoder.geocode({ 'address': originList[i] },
+                            showGeocodedAddressOnMap(false));
+                        for (var j = 0; j < results.length; j++) {
+                            geocoder.geocode({ 'address': destinationList[j] },
+                                showGeocodedAddressOnMap(true));
+                            outputDiv.innerHTML += originList[i] + ' to ' + destinationList[j] +
+                                ': ' + results[j].distance.text + ' in ' +
+                                results[j].duration.text + '<br>';
+                            console.log('results' , results);
+
+                            //add current distance to the DistancesSum and to the DistancesArr
+                            sumDistances += (results[j].distance.value) / 1000; //distance in km
+                            distancesArr.push((results[j].distance.value) / 1000)
+                        }
+                    }
+                    console.log("distances Arr: ", distancesArr);
+                    console.log("sumDistances: ", sumDistances);
+                    currentVariance = CalcVariance(distancesArr); // varience of distances arr
+                    console.log("Variance: ", currentVariance);
+
+                    //finding the optimalPoint: minimum distances sum && minimum variance - comparing current destination to past destinations
+                    if (sumDistances < minSumDistances && currentVariance < minVariance) {
+                        alert("there is a minimum!")
+                        minSumDistances = sumDistances;
+                        minVariance = currentVariance;
+                        optimalPoint = destination;
+                        console.log("min Variance: " , minVariance);
+                        console.log("min SumDistances: " , sumDistances);
+                        console.log("optimal Point: ", optimalPoint);
+
+                        //TBD - sending this optimal point to the nearByPlaces page
+                    }
+                }
+            });
+        }
+
+        function deleteMarkers(markersArray) {
+            for (var i = 0; i < markersArray.length; i++) {
+                markersArray[i].setMap(null);
+            }
+            markersArray = [];
+        }
+
+        //calcula average of numbers' array
+        //function CalcAverage(data) {
+        //    var sum = data.reduce(function (sum, value) {
+        //        return sum + value;
+        //    }, 0);
+        //    var avg = sum / data.length;
+        //    return avg;
+        //}
+
+        //calculate average of numbers' array
+        function CalcAverage(data) {
+            var sum = 0, i;
+            for (i = 0; i < data.length; i += 1) {
+                sum += data[i];
+            }         
+            avg = sum / data.length;
+            return avg;
+        }
+
+        //calcula variance of numbers' array
+        function CalcVariance(values) {
+            var avg = CalcAverage(values); //calculte avg of distances
+            //console.log('avg', avg);
+            var squareDiffs = values.map(function (value) { 
+                var diff = value - avg; 
+                var sqrDiff = diff * diff;
+                return sqrDiff;
+            });
+            var avgSquareDiff = CalcAverage(squareDiffs)
+            return avgSquareDiff;
+        }
+
+        //function for generating random points within a circle of radius R and a center point
+        function generateRandomPoints(centerPoint, radius, numOfPoints) {
+            var randomPointsArr = [];
+
+            for (var i = 0; i < numOfPoints; i++) {
+                r = radius * Math.sqrt(Math.random())
+                theta = Math.random() * 2 * Math.PI
+
+                point = {
+                    lat: centerPoint[0] + r * Math.cos(theta),
+                    lng: centerPoint[1] + r * Math.sin(theta)
+                }
+
+                randomPointsArr.push(point);
+            }
+            //console.log(randomPointsArr);
+            return randomPointsArr;
+        }
+
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_IUGLh-aXMDCj8xXs_OTpUiPiqp73Vak">
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+
+        html, body, #map-canvas {
+            height: 100%;
+            margin: 0px;
+            padding: 0px
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?AIzaSyCeao5I4o4CIfMTpBGRmpldt8JuONkUEhc&libraries=places"></script>
+    <script>
+        var map;
+        var infowindow;
+
+        var centerPoint
+        var result = [];
+        var foodTypesPreferencesCounts = [];
+        var foodTypesPreferences = [];
+        var mostWantedFoodTypeIndexes = [];
+        var mostWantedFoodTypeNames = [];
+        var preferencesPerMeetingToSend = [];
+        var strKeywords = "";
+        var optionalPlacesToSend = [];
+        var radius = 300;
+        var placeType= [];
+        preferencesFromDB = [
+            {
+                id: 5,
+                name: "vegan",
+                type: "vegan"
+            },
+
+            //{
+            //    id: 9,
+            //    name: "accessibility",
+            //    type: "accessibility",
+            //},
+
+            {
+                id: 11,
+                name: "kosher",
+                type: "kosher",
+            },
+
+            {
+                id: 15,
+                name: "middle eastern",
+                type: "food type",
+            },
+            {
+                id: 13,
+                name: "italian",
+                type: "food type",
+            },
+            {
+                id: 14,
+                name: "asian",
+                type: "food type",
+            },
+
+            {
+                id: 14,
+                name: "asian",
+                type: "food type",
+            },
+            {
+                id: 13,
+                name: "italian",
+                type: "food type",
+            },
+
+            {
+                id: 16,
+                name: "meet",
+                type: "food type",
+            },
+        ]
+        placeType = 'restaurant';
+      
+        PreferencesPerMeetingToSend();
+        console.log("optionalPlacesToSend", optionalPlacesToSend);
+
+        function PreferencesPerMeetingToSend() { //creating an array to send as key word to google
+
+            if (placeType == 'restaurant') {
+                for (var i = 0; i < preferencesFromDB.length; i++) {//insert general preferences
+                    if (preferencesFromDB[i].name == 'kosher' || preferencesFromDB[i].name == 'accessibility' || preferencesFromDB[i].name == 'vegan' || preferencesFromDB[i].name == 'vegetarian')
+                        preferencesPerMeetingToSend.push(preferencesFromDB[i].name);
+                }
+                console.log('preferencesPerMeetingToSend' , preferencesPerMeetingToSend);
+                strKeywords += "'";
+
+                //converting to str - will contain the keys for google places request
+                for (var i = 0; i < preferencesPerMeetingToSend.length; i++) {//preferences str
+                    strKeywords += preferencesPerMeetingToSend[i] + " AND ";
+                }
+                strKeywords = strKeywords.slice(0, -1);
+
+                FindMostWantedFoodTypePerMeeting();
+                if (mostWantedFoodTypeNames.length > 1) {
+                    strKeywords += " ("
+                    for (var i = 0; i < mostWantedFoodTypeNames.length; i++) {//food types str
+                        strKeywords += mostWantedFoodTypeNames[i] + " OR ";
+                    }
+                    strKeywords = strKeywords.slice(0, -4);
+                    strKeywords += ")"
+                }
+                else {
+                    strKeywords += " " + mostWantedFoodTypeNames[0];
+                }
+                strKeywords += "'";
+                console.log('strKeywords' , strKeywords);
+            } 
+            else if (placeType == 'cafe') {
+                for (var i = 0; i < preferencesFromDB.length; i++) {//insert general preferences
+                    if (preferencesFromDB[i].name == 'kosher' || preferencesFromDB[i].name == 'accessibility' || preferencesFromDB[i].name == 'vegan' || preferencesFromDB[i].name == 'vegetarian')
+                        preferencesPerMeetingToSend.push(preferencesFromDB[i].name);
+                }
+                console.log('preferencesPerMeetingToSend', preferencesPerMeetingToSend);
+                strKeywords += "'";
+
+                //converting to str - will contain the keys for google places request
+                for (var i = 0; i < preferencesPerMeetingToSend.length; i++) {//preferences str
+                    strKeywords += preferencesPerMeetingToSend[i] + " AND ";
+                }
+                strKeywords = strKeywords.slice(0, -5);
+                strKeywords += "'";
+                console.log('strKeywords' , strKeywords);
+            }
+            else {// palceType = bar
+                for (var i = 0; i < preferencesFromDB.length; i++) {//insert general preferences
+                    if (preferencesFromDB[i].name == 'kosher' || preferencesFromDB[i].name == 'accessibility')
+                        preferencesPerMeetingToSend.push(preferencesFromDB[i].name);
+                }
+                console.log('preferencesPerMeetingToSend' , preferencesPerMeetingToSend);
+                strKeywords += "'";
+
+                //converting to str - will contain the keys for google places request
+                for (var i = 0; i < preferencesPerMeetingToSend.length; i++) {//preferences str
+                    strKeywords += preferencesPerMeetingToSend[i] + " AND ";
+                }
+                strKeywords = strKeywords.slice(0, -5);
+                strKeywords += "'";
+                console.log('strKeywords' , strKeywords);
+            }
+       
+        }
+
+        //console.log(mostWantedFoodTypeNames);
+
+        function FindMostWantedFoodTypePerMeeting() {
+            //find the most wanted food type/s of the current meeting as its participants' preferences were returned from DB table - Participant_Preference_Meeting
+            //and after translating it trought Preferences table.
+
+            result = CountFoodTypesPerMeeting(preferencesFromDB);
+            // console.log(result);
+            foodTypesPreferences = result[0];
+            foodTypesPreferencesCounts = result[1];
+            mostWantedFoodTypeIndexes = multipleMax(foodTypesPreferencesCounts);
+            for (var i = 0; i < mostWantedFoodTypeIndexes.length; i++) {
+                mostWantedFoodTypeNames[i] = foodTypesPreferences[mostWantedFoodTypeIndexes[i]].name;
+            }
+        }
+
+        function multipleMax(arr) {
+            var max = -Infinity;
+            var maxValuesArr = [];
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i] === max) {
+                    maxValuesArr.push(i);
+                } else if (arr[i] > max) {
+                    maxValuesArr = [i];
+                    max = arr[i];
+                }
+            }
+            return maxValuesArr;
+        }
+
+        function CountFoodTypesPerMeeting(meetingPreferencesArr) {
+            var a = [], b = [], prev;
+            meetingPreferencesArr.sort(function (a, b) {
+                return a.id - b.id;
+            });
+            for (var i = 0; i < meetingPreferencesArr.length; i++) {
+                if (meetingPreferencesArr[i].type == "food type") {
+                    if (meetingPreferencesArr[i].id !== prev) {
+                        a.push(meetingPreferencesArr[i]);
+                        b.push(1);
+                    } else {
+                        b[b.length - 1]++;
+                    }
+                    prev = meetingPreferencesArr[i].id;
+                }
+
+            }
+            return [a, b]; //returns array of 2 arrays - first arr (in '0' index)- contains all meeting food preferences ids, second (in '1' index)- contains the occurrences count of each meeting's preference
+        }
+
+        function initialize() {
+            /var centerPoint = new google.maps.LatLng(32.312768, 34.9213908);/ // sample location to start with: nahal kama 23 kfar yona
+            centerPoint = new google.maps.LatLng(32.081479, 34.773710); //center the map in Tel aviv
+            map = new google.maps.Map(document.getElementById('map-canvas'), {
+                center: centerPoint,
+                zoom: 15
+            });
+            generateRequest();
+        }
+
+        function generateRequest() {
+            //wantedPlaceType= getting the place type from meeting table as an array (inseted by the creator){
+            var request = {
+                location: centerPoint,
+                radius: radius,
+                types: placeType,
+                keyword: strKeywords
+                //keyword: 'vegan AND accessibility AND kosher AND (italian OR asian)'
+            };
+
+            infowindow = new google.maps.InfoWindow();
+            var service = new google.maps.places.PlacesService(map);
+            service.nearbySearch(request, generatePlaces); //generate the request
+
+            //console.log("optional places:", optionalPlacesToSend)
+        }
+            //generates the request for nearby places according the meeting preferences until there are at least 6 places
+        function generatePlaces(results, status) {
+            if (status == google.maps.places.PlacesServiceStatus.OK) {
+                for (var i = 0; i < results.length; i++) {
+                    createMarker(results[i]);
+                }
+                optionalPlacesToSend = results;
+                console.log(radius);
+                console.log('places iterations:', optionalPlacesToSend);
+            }
+            if (radius <= 4000) {
+                if (results.length < 6) {
+                    radius += 300; //increasing the radius in order to find enought places
+                    generateRequest();
+                }
+                else //(results.length >= 6)
+                placesResults(optionalPlacesToSend);
+            }
+            //TBD- when there are no suitable close places, we should check again the random points
+            else
+            {// radius>4000
+                  if (results.length == 0) {//in case there are no places in 4 km radius from optimal point
+                    alert("there are no places in 4 km raduis from optimal point");
+                  }
+                  else {
+                    placesResults(optionalPlacesToSend);
+                  }
+            }
+        }
+        
+            function createMarker(place) {
+                var placeLoc = place.geometry.location;
+                var marker = new google.maps.Marker({
+                    map: map,
+                    position: place.geometry.location
+                });
+
+                google.maps.event.addListener(marker, 'click', function () {
+                    infowindow.setContent(place.name);
+                    infowindow.open(map, this);
+                });
+            }
+        
+
+        function placesResults(PlacesResultsArr) {
+            console.log('final places:', PlacesResultsArr);        
+             //here will be the code to send places to the meeting's creator
+        }
+
+        google.maps.event.addDomListener(window, 'load', initialize);
+
+
+    </script>
+</head>
+<body>
+    <div id="map-canvas"></div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCeao5I4o4CIfMTpBGRmpldt8JuONkUEhc&libraries=places"></script>
+</body>
+</html>

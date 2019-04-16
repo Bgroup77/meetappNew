@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MEETAPP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <!--<link href="../styleSheet.css" rel="stylesheet" />
+    <script src="../Scripts/design.js"></script>-->
+
+    <style type="text/css">
+
+        img {
+            height: 100px;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            //get all participants from DB
+            ajaxCall("GET", "../api/participants", "", successGetParticipants, errorGetParticipants);
+            $("#pForm").submit(AddMeeting);
+        });
+
+
+        function AddMeeting() {
+            Meeting = {
+            // Note that the name of the fields must be identical to the names of the properties of the object in the server
+            Subject: $("#subject").val(),
+            StartTime: $("#startDate").val(),
+             //StartDate: $("#startDate").val() = Convert.ToDateTime(dt.Rows[0][5]).ToString("yyyy-MM-dd"),
+            StartHour: $("#startHour").val(),
+            //CreationDate: DateTime.UtcNow.Date,
+            TimeTillRunningHours: $("#timeTillRunningHoures").val(),
+            SpecificLocation: $("#specificLocation").val(),
+            Notes: $("#notes").val(),
+            Participants: $("#participants").val(),
+            }
+
+            ajaxCall("POST", "../api/meeting", JSON.stringify(Meeting), successMeeting, errorMeeting);
+            return false;
+
+        }
+
+        function successMeeting(data) {
+            swal("The meeting was added successfully :)");
+        }
+
+        function errorMeeting(err) {
+            alert("error");
+        }
+
+        // this function is activated in case of a success
+        function successGetParticipants(participantsdata) {
+            strParticipants = "";
+            for (var i = 0; i < participantsdata.length; i++)
+
+            {
+                strParticipants += "<option value =' " + (i + 1) + "'>" + participantsdata[i].Email + "</option >";
+        }
+
+            $("#participants").html(strParticipants);
+        }
+
+        // this function is activated in case of a failure
+        function errorGetParticipants(err) {
+            alert("could not get participants from DB");
+        }
+
+
+    </script>
+</head>
+<body>
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#"> MEETAPP</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"> <a href="insertMeeting.html"> Add a Meeting</a> </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <form id="pForm">
+            <h2> הזן פרטים</h2>
+            <div class="form-group">
+                <label for="subject"> נושא</label>
+                <input type="text" class="form-control" id="subject" placeholder="" required pattern="[א-תA-Za-z]+" oninvalid="this.setCustomValidity('Invalid input- only alphabetic characters are allowed')">
+            </div>
+            <!--<div class="form-group">
+                <label for="startDate">תאריך התחלה</label>
+                <input type="date" class="form-control" id="startDate" placeholder="Enter your startDate" required>
+            </div>-->
+            <div class="form-group">
+                <label for="startDate">תאריך התחלה</label>
+                <input type="text" class="form-control" id="startDate" placeholder="Enter your startDate" required>
+            </div>
+            <div class="form-group">
+                <label for="startHour">שעת התחלה</label>
+                <input type="time" class="form-control" id="startHour" placeholder="Enter your startHour" required>
+            </div>
+            <div class="form-group">
+                <label for="participants"> משתתפים</label>
+                <select id="participants" multiple required> </select>
+            </div>
+            <div class="form-group">
+                <label for="timeTillRunningHoures"> מספר שעות עד ריצת האלגוריתם</label>
+                <input type="number" class="form-control" id="timeTillRunningHoures" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="specificLocation"> איזור ספציפי</label>
+                <input type="text" class="form-control" id="specificLocation" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="notes"> הערות</label>
+                <input type="text" class="form-control" id="notes" placeholder="">
+            </div>
+            <div id="ph"> </div>
+            <input type="submit" value="שלח" />
+        </form>
+    </div>
+</body>
+</html>
